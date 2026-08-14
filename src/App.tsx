@@ -48,6 +48,8 @@ function RequireAuth({ children, role }: { children: React.ReactNode; role?: Use
 
 function ThemeProvider({ children }: { children: React.ReactNode }) {
   const { theme } = useThemeStore();
+  // Apply immediately (synchronous) so there's no flash after mount
+  document.documentElement.classList.toggle('dark', theme === 'dark');
   React.useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);

@@ -6,11 +6,11 @@ import { useThemeStore } from '@/store';
 import Button from '@/components/ui/Button';
 
 const navLinks = [
-  { label: 'Product', href: '#features' },
   { label: 'How It Works', href: '#how-it-works' },
+  { label: 'Operations', href: '#operations' },
   { label: 'Features', href: '#features' },
+  { label: 'Pricing', href: '#pricing' },
   { label: 'For Universities', href: '#universities' },
-  { label: 'About', href: '#about' },
 ];
 
 export default function LandingNavbar() {
@@ -41,7 +41,7 @@ export default function LandingNavbar() {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shadow-md">
                 <span className="text-white font-bold text-sm">T</span>
               </div>
               <span className="font-bold text-slate-900 dark:text-white text-[15px] tracking-tight">
@@ -64,12 +64,17 @@ export default function LandingNavbar() {
 
             {/* Actions */}
             <div className="flex items-center gap-2">
+              {/* Theme toggle — Sun = switch to light, Moon = switch to dark */}
               <button
                 onClick={toggleTheme}
                 aria-label="Toggle theme"
                 className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               >
-                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                {theme === 'dark' ? (
+                  <Sun className="w-4 h-4" />
+                ) : (
+                  <Moon className="w-4 h-4" />
+                )}
               </button>
               <Link
                 to="/login"
@@ -118,10 +123,17 @@ export default function LandingNavbar() {
                 </a>
               ))}
               <div className="pt-2 flex flex-col gap-2">
-                <Link to="/login" className="block px-4 py-3 text-sm text-center text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
+                <Link
+                  to="/login"
+                  className="block px-4 py-3 text-sm text-center text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                >
                   Login
                 </Link>
-                <Button size="md" onClick={() => { navigate('/register'); setMobileOpen(false); }} className="w-full">
+                <Button
+                  size="md"
+                  onClick={() => { navigate('/register'); setMobileOpen(false); }}
+                  className="w-full"
+                >
                   Get Started
                 </Button>
               </div>
