@@ -1,0 +1,164 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* ─── Design Tokens ─────────────────────────────────────────────────────── */
+@theme {
+  --color-brand-50: oklch(0.97 0.02 270);
+  --color-brand-100: oklch(0.93 0.04 270);
+  --color-brand-200: oklch(0.87 0.08 270);
+  --color-brand-300: oklch(0.78 0.13 270);
+  --color-brand-400: oklch(0.67 0.19 270);
+  --color-brand-500: oklch(0.58 0.24 270);
+  --color-brand-600: oklch(0.50 0.26 270);
+  --color-brand-700: oklch(0.42 0.23 270);
+  --color-brand-800: oklch(0.34 0.19 270);
+  --color-brand-900: oklch(0.27 0.14 270);
+  --color-brand-950: oklch(0.17 0.09 270);
+
+  --font-sans: 'Inter', system-ui, sans-serif;
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+}
+
+/* ─── Base ───────────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  @apply bg-white text-slate-900;
+}
+
+.dark body {
+  @apply bg-slate-950 text-slate-50;
+}
+
+/* ─── Dark Mode ──────────────────────────────────────────────────────────── */
+.dark {
+  color-scheme: dark;
+}
+
+/* ─── Scrollbar ──────────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-slate-100 dark:bg-slate-800;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 dark:bg-slate-600 rounded-full;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-400 dark:bg-slate-500;
+}
+
+/* ─── Selection ──────────────────────────────────────────────────────────── */
+::selection {
+  @apply bg-violet-200 dark:bg-violet-800;
+}
+
+/* ─── Focus ──────────────────────────────────────────────────────────────── */
+:focus-visible {
+  @apply outline-2 outline-violet-500 outline-offset-2;
+}
+
+/* ─── Animations ─────────────────────────────────────────────────────────── */
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    theme(colors.slate.100) 25%,
+    theme(colors.slate.50) 50%,
+    theme(colors.slate.100) 75%
+  );
+  background-size: 200% auto;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.dark .skeleton {
+  background: linear-gradient(
+    90deg,
+    theme(colors.slate.800) 25%,
+    theme(colors.slate.700) 50%,
+    theme(colors.slate.800) 75%
+  );
+  background-size: 200% auto;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4); }
+  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(139, 92, 246, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); }
+}
+
+.pulse-ring {
+  animation: pulse-ring 2s ease-in-out infinite;
+}
+
+/* ─── Sentence Highlighting ──────────────────────────────────────────────── */
+.sentence-human {
+  @apply bg-emerald-50 dark:bg-emerald-950/20 border-b-2 border-emerald-400 cursor-pointer transition-all duration-200;
+}
+.sentence-human:hover,
+.sentence-human.selected {
+  @apply bg-emerald-100 dark:bg-emerald-900/40;
+}
+
+.sentence-uncertain {
+  @apply bg-amber-50 dark:bg-amber-950/20 border-b-2 border-amber-400 cursor-pointer transition-all duration-200;
+}
+.sentence-uncertain:hover,
+.sentence-uncertain.selected {
+  @apply bg-amber-100 dark:bg-amber-900/40;
+}
+
+.sentence-ai {
+  @apply bg-rose-50 dark:bg-rose-950/20 border-b-2 border-rose-400 cursor-pointer transition-all duration-200;
+}
+.sentence-ai:hover,
+.sentence-ai.selected {
+  @apply bg-rose-100 dark:bg-rose-900/40;
+}
+
+/* ─── Prose ──────────────────────────────────────────────────────────────── */
+.essay-text {
+  @apply text-slate-800 dark:text-slate-200 leading-relaxed text-[15px];
+  font-family: 'Inter', Georgia, serif;
+}
+
+/* ─── Glass ──────────────────────────────────────────────────────────────── */
+.glass {
+  @apply backdrop-blur-md bg-white/80 dark:bg-slate-900/80;
+}
+
+/* ─── Gradient text ──────────────────────────────────────────────────────── */
+.gradient-text {
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Score Ring ─────────────────────────────────────────────────────────── */
+.score-ring {
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
