@@ -1,15 +1,36 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Users, FileText, AlertTriangle, CheckCircle2, Activity } from 'lucide-react';
 import { mockFacultyStats, mockFacultyStudents, mockDailyEssayData, mockRiskDistributionData } from '@/mock';
-import { StatCard } from '@/components/ui/Card';
-import { Card } from '@/components/ui/Card';
+import { StatCard, Card } from '@/components/ui/Card';
 import { RiskBadge, StatusBadge } from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
-import { scoreToColor, formatDate } from '@/lib/utils';
+import { scoreToColor } from '@/lib/utils';
+import { getFacultyStats } from '@/services/api';
 
 export default function FacultyDashboard() {
-  const stats = mockFacultyStats;
+  const navigate = useNavigate();
+  const [stats, setStats] = useState(mockFacultyStats);
+
+  useEffect(() => {
+    getFacultyStats()
+      .then(data => {
+        if (data) {
+          setStats(prev => ({
+            ...prev,
+            totalStudents: data.totalStudents || prev.totalStudents,
+            totalEssays: data.submittedEssays || prev.totalEssays,
+            highRisk: data.flaggedEssays || prev.highRisk,
+          }));
+        }
+      })
+      .catch(err => {
+        console.warn('Faculty stats API fallback:', err);
+      });
+  }, []);
+
   return (
     <div className="space-y-8">
       <div>
@@ -68,7 +89,7 @@ export default function FacultyDashboard() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-slate-100 dark:border-slate-800">
+              <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
                 {['Student', 'Essay', 'Authenticity', 'Risk', 'Date', 'Status', 'Actions'].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">{h}</th>
                 ))}
@@ -91,7 +112,13 @@ export default function FacultyDashboard() {
                   <td className="px-4 py-3.5 text-xs text-slate-400">{s.submittedAt}</td>
                   <td className="px-4 py-3.5"><StatusBadge status={s.status} /></td>
                   <td className="px-4 py-3.5">
-                    <Button variant="ghost" size="sm">View</Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => navigate(`/faculty/essays/e1`)}
+                    >
+                      View
+                    </Button>
                   </td>
                 </motion.tr>
               ))}

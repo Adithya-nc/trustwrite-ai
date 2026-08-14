@@ -41,10 +41,21 @@ interface ThemeStore {
 export const useThemeStore = create<ThemeStore>()(
   persist(
     (set) => ({
-      theme: 'light',
+      theme: 'dark',
       toggleTheme: () =>
-        set((state) => ({ theme: state.theme === 'light' ? 'dark' : 'light' })),
-      setTheme: (theme) => set({ theme }),
+        set((state) => {
+          const next = state.theme === 'light' ? 'dark' : 'light';
+          if (typeof document !== 'undefined') {
+            document.documentElement.classList.toggle('dark', next === 'dark');
+          }
+          return { theme: next };
+        }),
+      setTheme: (theme) => {
+        if (typeof document !== 'undefined') {
+          document.documentElement.classList.toggle('dark', theme === 'dark');
+        }
+        set({ theme });
+      },
     }),
     { name: 'trustwrite-theme' }
   )

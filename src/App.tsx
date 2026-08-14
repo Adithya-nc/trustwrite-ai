@@ -61,7 +61,7 @@ export default function App() {
     <ThemeProvider>
       <BrowserRouter>
         <Toaster
-          position="top-right"
+          position="bottom-right"
           toastOptions={{
             duration: 4000,
             style: {
@@ -97,6 +97,7 @@ export default function App() {
               <Route index element={<FacultyDashboard />} />
               <Route path="students" element={<FacultyStudents />} />
               <Route path="essays" element={<FacultyEssays />} />
+              <Route path="essays/:id" element={<StudentEssayView />} />
               <Route path="batch-analysis" element={<FacultyBatch />} />
               <Route path="reports" element={<FacultyReports />} />
             </Route>

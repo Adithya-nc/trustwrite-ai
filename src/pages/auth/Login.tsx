@@ -69,7 +69,7 @@ export default function LoginPage() {
           </p>
           <div className="grid grid-cols-2 gap-4">
             {[
-              { label: 'Detection Accuracy', value: '99.2%' },
+              { label: 'Stylometric Metrics', value: '20+' },
               { label: 'Universities', value: '50+' },
               { label: 'Essays Analyzed', value: '124K+' },
               { label: 'Analysis Time', value: '< 30s' },
@@ -84,17 +84,8 @@ export default function LoginPage() {
       </div>
 
       {/* Right panel */}
-      <div className="flex-1 flex flex-col">
-        <div className="flex justify-end p-4">
-          <button
-            onClick={toggleTheme}
-            className="w-9 h-9 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-            aria-label="Toggle theme"
-          >
-            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
-        </div>
-        <div className="flex-1 flex items-center justify-center px-6">
+      <div className="flex-1 flex flex-col bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
+        <div className="flex-1 flex items-center justify-center px-6 py-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

@@ -8,11 +8,12 @@ import {
 } from 'recharts';
 import {
   ArrowLeft, Download, Share2, Printer, ChevronRight, X,
-  AlertTriangle, CheckCircle2, HelpCircle, Sparkles, Lightbulb,
-  Activity, BookOpen, Zap,
+  AlertTriangle, CheckCircle2, HelpCircle, FileCheck, Lightbulb,
+  Activity, BookOpen, Fingerprint, Info, ShieldCheck
 } from 'lucide-react';
-import { mockAnalysis, mockEssays } from '@/mock';
-import { SentenceAnalysis } from '@/types';
+import toast from 'react-hot-toast';
+import { mockAnalysis, mockEssays, SAMPLE_ESSAY_CONTENT } from '@/mock';
+import { SentenceAnalysis, EssayAnalysis } from '@/types';
 import { cn, getSentenceColor, formatDateTime, scoreToColor, scoreToLabel } from '@/lib/utils';
 import Button from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -216,9 +217,99 @@ export default function EssayView() {
   const navigate = useNavigate();
   const [selectedSentence, setSelectedSentence] = useState<SentenceAnalysis | null>(null);
   const [activeTab, setActiveTab] = useState<'analysis' | 'analytics' | 'fingerprint' | 'improvements'>('analysis');
+  const [realAnalysis, setRealAnalysis] = useState<EssayAnalysis | null>(null);
+  const [realEssayTitle, setRealEssayTitle] = useState<string>('Submitted Essay');
+  const [realWordCount, setRealWordCount] = useState<number>(0);
 
-  const essay = mockEssays.find(e => e.id === id) || mockEssays[0];
-  const analysis = mockAnalysis;
+  useEffect(() => {
+    if (id && typeof window !== 'undefined') {
+      const stored = window.sessionStorage.getItem(`analysis_${id}`);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          setRealAnalysis(parsed);
+          const title = window.sessionStorage.getItem(`essay_title_${id}`) || 'Analyzed Essay';
+          const text = window.sessionStorage.getItem(`essay_text_${id}`) || '';
+          setRealEssayTitle(title);
+          setRealWordCount(text ? text.trim().split(/\s+/).length : (parsed.sentences ? (parsed.sentences as SentenceAnalysis[]).reduce((acc: number, s: SentenceAnalysis) => acc + s.text.split(' ').length, 0) : 0));
+          return;
+        } catch {}
+      }
+    }
+  }, [id]);
+
+  const essay = realAnalysis ? {
+    id: realAnalysis.essayId,
+    title: realEssayTitle,
+    content: '',
+    wordCount: realWordCount || 500,
+    uploadedAt: realAnalysis.analyzedAt,
+    status: 'analyzed' as const,
+    authenticityScore: realAnalysis.authenticityScore,
+    aiRisk: realAnalysis.aiProbability > 70 ? ('high' as const) : realAnalysis.aiProbability > 40 ? ('medium' as const) : ('low' as const),
+    studentId: 'u1',
+    studentName: 'Alex Johnson'
+  } : (mockEssays.find(e => e.id === id) || mockEssays[0]);
+
+  const targetScore = essay ? essay.authenticityScore : 87;
+  const targetAiProb = 100 - targetScore;
+  const targetClass = targetScore >= 75 ? 'Likely Human' : targetScore >= 50 ? 'Mixed / Uncertain' : 'Likely AI-Assisted';
+
+  const analysis: EssayAnalysis = realAnalysis || {
+    essayId: essay.id,
+    authenticityScore: targetScore,
+    aiProbability: targetAiProb,
+    confidence: 'high',
+    classification: targetClass,
+    writingQuality: targetScore >= 75 ? 88 : 72,
+    originality: targetScore,
+    analyzedAt: essay.uploadedAt,
+    sentences: (essay.content || SAMPLE_ESSAY_CONTENT).split(/(?<=[.!?])\s+/).filter(Boolean).map((s: string, idx: number) => {
+      let label: 'human' | 'uncertain' | 'ai' = 'human';
+      if (targetScore < 60) {
+        label = idx % 2 === 0 ? 'ai' : 'uncertain';
+      } else if (targetScore < 80) {
+        label = idx % 3 === 0 ? 'uncertain' : 'human';
+      }
+      const aiProb = targetScore < 60 ? (idx % 2 === 0 ? 88 : 55) : 15;
+      return {
+        id: `s_${idx}`,
+        index: idx,
+        text: s,
+        label,
+        aiProbability: aiProb,
+        confidence: 'high' as const,
+        patterns: label === 'ai' ? [{ name: 'Formal Template Connector' }] : [],
+        explanation: label === 'ai' ? 'Elevated syntactic uniformity and formal template connector density.' : label === 'uncertain' ? 'Formal academic phrasing with low first-person register.' : 'Organic sentence length variation and personal narrative voice.',
+        paragraphIndex: Math.floor(idx / 3)
+      };
+    }),
+    metrics: {
+      vocabularyDiversity: targetScore,
+      sentenceVariation: targetScore,
+      sentenceComplexity: targetScore >= 75 ? 75 : 85,
+      readability: 70,
+      grammar: 85,
+      passiveVoice: 12,
+      emotionalTone: 70,
+      vocabularyRichness: targetScore,
+      writingConsistency: targetScore
+    },
+    improvements: [
+      { id: 'i1', category: 'authenticity', severity: targetScore < 60 ? 'high' : 'low', issue: targetScore < 60 ? 'High AI transition word density detected' : 'Strong personal narrative voice', suggestion: 'Incorporate more autobiographical context and personal reflection.' }
+    ],
+    fingerprint: {
+      vocabulary: targetScore * 0.9,
+      sentenceRhythm: targetScore,
+      complexity: targetScore >= 75 ? 70 : 85,
+      punctuation: 80,
+      formality: targetScore < 60 ? 85 : 45,
+      uniqueness: targetScore
+    },
+    paragraphRisks: [
+      { paragraphIndex: 0, aiProbability: targetScore < 60 ? 75 : 15, label: targetScore < 60 ? 'ai' : 'human' }
+    ]
+  };
 
   const radarData = [
     { subject: 'Vocabulary', value: analysis.metrics.vocabularyDiversity },
@@ -238,9 +329,76 @@ export default function EssayView() {
   const tabs = [
     { id: 'analysis', label: 'Essay Analysis', icon: BookOpen },
     { id: 'analytics', label: 'Writing Analytics', icon: Activity },
-    { id: 'fingerprint', label: 'Fingerprint', icon: Zap },
+    { id: 'fingerprint', label: 'Fingerprint', icon: Fingerprint },
     { id: 'improvements', label: 'Improvements', icon: Lightbulb },
   ] as const;
+
+  const handleShare = () => {
+    try {
+      navigator.clipboard.writeText(window.location.href);
+      toast.success('Report link copied to clipboard!');
+    } catch {
+      toast('Link: ' + window.location.href);
+    }
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleDownloadReport = () => {
+    const content = `=======================================================
+TRUSTWRITE AI — ESSAY ANALYSIS REPORT
+=======================================================
+Title: ${essay.title}
+Analyzed At: ${formatDateTime(analysis.analyzedAt)}
+Word Count: ${essay.wordCount} words
+
+OVERVIEW SUMMARY
+-------------------------------------------------------
+Personal Voice Score: ${analysis.authenticityScore}/100
+AI-Like Pattern Signal: ${analysis.aiProbability}%
+Classification: ${analysis.classification}
+Evidence Strength: ${analysis.evidenceStrength || (analysis.confidence === 'high' ? 'Strong' : 'Moderate')}
+Writing Flow: ${analysis.writingQuality}%
+Vocabulary Diversity: ${analysis.originality}%
+
+OBSERVATIONS
+-------------------------------------------------------
+${analysis.whyThisResult || analysis.summary || 'Stylometric analysis complete.'}
+
+${analysis.genreObservation ? `Genre Classification: ${analysis.genreObservation}\n` : ''}
+DETAILED METRICS
+-------------------------------------------------------
+- Vocabulary Diversity: ${analysis.metrics.vocabularyDiversity}%
+- Sentence Variation: ${analysis.metrics.sentenceVariation}%
+- Readability: ${analysis.metrics.readability}%
+- Grammar Flow: ${analysis.metrics.grammar}%
+- Writing Consistency: ${analysis.metrics.writingConsistency}%
+
+SENTENCE-BY-SENTENCE BREAKDOWN
+-------------------------------------------------------
+${analysis.sentences.map((s, i) => `[${s.label.toUpperCase()}] (${s.aiProbability}% AI Signal) Sentence ${i + 1}:
+"${s.text}"
+Explanation: ${s.explanation}${s.suggestion ? `\nSuggestion: ${s.suggestion}` : ''}
+`).join('\n')}
+
+RELIABILITY NOTICE
+-------------------------------------------------------
+Detection is probabilistic and should not be treated as definitive proof of AI authorship.
+=======================================================`;
+
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${essay.title.toLowerCase().replace(/[^a-z0-9]+/g, '_')}_report.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success('Analysis report downloaded successfully!');
+  };
 
   return (
     <div className="space-y-6">
@@ -256,33 +414,136 @@ export default function EssayView() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" leftIcon={<Share2 className="w-4 h-4" />}>Share</Button>
-          <Button variant="outline" size="sm" leftIcon={<Printer className="w-4 h-4" />}>Print</Button>
-          <Button size="sm" leftIcon={<Download className="w-4 h-4" />}>Download Report</Button>
+          <Button variant="outline" size="sm" leftIcon={<Share2 className="w-4 h-4" />} onClick={handleShare}>Share</Button>
+          <Button variant="outline" size="sm" leftIcon={<Printer className="w-4 h-4" />} onClick={handlePrint}>Print</Button>
+          <Button size="sm" leftIcon={<Download className="w-4 h-4" />} onClick={handleDownloadReport}>Download Report</Button>
         </div>
       </div>
 
-      {/* Score Overview */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="col-span-2 lg:col-span-1 flex flex-col items-center justify-center py-6">
-          <ScoreRing score={analysis.authenticityScore} />
-          <p className="mt-3 font-semibold text-slate-900 dark:text-white text-sm">{scoreToLabel(analysis.authenticityScore)}</p>
-          <p className="text-xs text-slate-400 dark:text-slate-500">Authenticity Score</p>
-          <Badge variant={analysis.confidence === 'high' ? 'success' : 'warning'} className="mt-2">
-            {analysis.confidence.charAt(0).toUpperCase() + analysis.confidence.slice(1)} Confidence
-          </Badge>
-        </Card>
-        {[
-          { label: 'AI Pattern Risk', value: `${analysis.aiProbability}%`, color: 'text-rose-600 dark:text-rose-400', sub: analysis.classification },
-          { label: 'Writing Quality', value: `${analysis.writingQuality}%`, color: 'text-indigo-600 dark:text-indigo-400', sub: scoreToLabel(analysis.writingQuality) },
-          { label: 'Originality', value: `${analysis.originality}%`, color: 'text-emerald-600 dark:text-emerald-400', sub: scoreToLabel(analysis.originality) },
-        ].map(({ label, value, color, sub }) => (
-          <Card key={label} className="flex flex-col justify-center">
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">{label}</p>
-            <p className={cn('text-3xl font-black', color)}>{value}</p>
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{sub}</p>
+      {/* Writing Style & Pattern Overview */}
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <FileCheck className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+            Writing Style & Pattern Overview
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Diagnostic indicators measuring autobiographical voice, sentence variation, and automated language patterns.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Card 1: Personal Voice / Authenticity */}
+          <Card className="col-span-2 lg:col-span-1 flex flex-col items-center justify-center py-6">
+            <ScoreRing score={analysis.authenticityScore} />
+            <p className="mt-3 font-semibold text-slate-900 dark:text-white text-sm">{scoreToLabel(analysis.authenticityScore)} Voice</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 text-center px-2 mt-0.5">Personal Voice & Natural Variation</p>
+            <Badge variant={analysis.confidence === 'high' ? 'success' : analysis.confidence === 'medium' ? 'warning' : 'default'} className="mt-2 text-[11px]">
+              {analysis.evidenceStrength ? `${analysis.evidenceStrength} Evidence` : `${analysis.confidence.charAt(0).toUpperCase() + analysis.confidence.slice(1)} Evidence`}
+            </Badge>
           </Card>
-        ))}
+
+          {/* Card 2: AI-Like Pattern Signal */}
+          <Card className="flex flex-col justify-between">
+            <div>
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">AI Pattern Signal</p>
+              <p className="text-3xl font-black text-rose-600 dark:text-rose-400 mt-1">{analysis.aiProbability}%</p>
+              <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                {analysis.classification}
+              </div>
+            </div>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-3">
+              Resemblance to automated writing patterns (NOT an authorship probability).
+            </p>
+          </Card>
+
+          {/* Card 3: Writing Flow & Structure */}
+          <Card className="flex flex-col justify-between">
+            <div>
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Writing Flow</p>
+              <p className="text-3xl font-black text-indigo-600 dark:text-indigo-400 mt-1">{analysis.writingQuality}%</p>
+              <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                {scoreToLabel(analysis.writingQuality)}
+              </div>
+            </div>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-3">
+              Sentence rhythm, readability ease, and paragraph structural pacing.
+            </p>
+          </Card>
+
+          {/* Card 4: Vocabulary Diversity */}
+          <Card className="flex flex-col justify-between">
+            <div>
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Vocabulary Diversity</p>
+              <p className="text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-1">{analysis.originality}%</p>
+              <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                {scoreToLabel(analysis.originality)}
+              </div>
+            </div>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-3">
+              Lexical richness, unique word distribution, and phrase diversity.
+            </p>
+          </Card>
+        </div>
+
+        {/* What Does the Score Mean Guide */}
+        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+          <p className="text-xs font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-1.5">
+            <Info className="w-4 h-4 text-violet-500" />
+            What does the Personal Voice Score ({analysis.authenticityScore} / 100) mean?
+          </p>
+          <div className="grid sm:grid-cols-3 gap-3 text-xs">
+            <div className="p-2.5 rounded-lg bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40">
+              <p className="font-semibold text-emerald-800 dark:text-emerald-300 mb-0.5">80 – 100 / 100 (Likely Human)</p>
+              <p className="text-slate-600 dark:text-slate-400 text-[11px] leading-relaxed">Strong autobiographical voice, high sentence burstiness, organic personal vocabulary.</p>
+            </div>
+            <div className="p-2.5 rounded-lg bg-amber-50/60 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/40">
+              <p className="font-semibold text-amber-800 dark:text-amber-300 mb-0.5">50 – 79 / 100 (Uncertain / Formal)</p>
+              <p className="text-slate-600 dark:text-slate-400 text-[11px] leading-relaxed">Formal style or mixed voice. Common in Wikipedia reference entries or heavily edited drafts.</p>
+            </div>
+            <div className="p-2.5 rounded-lg bg-rose-50/60 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/40">
+              <p className="font-semibold text-rose-800 dark:text-rose-300 mb-0.5">0 – 49 / 100 (Likely AI-Assisted)</p>
+              <p className="text-slate-600 dark:text-slate-400 text-[11px] leading-relaxed">Elevated AI template connectors ("Furthermore"), uniform sentence lengths, high risk.</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Dynamic Context & Admissions Guidance */}
+        <div className="grid md:grid-cols-2 gap-4">
+          {/* Dynamic Why This Result */}
+          <div className="rounded-xl p-4 bg-violet-50/70 dark:bg-violet-950/20 border border-violet-100 dark:border-violet-900/50 space-y-2">
+            <div className="flex items-center gap-2">
+              <HelpCircle className="w-4 h-4 text-violet-600 dark:text-violet-400 flex-shrink-0" />
+              <h4 className="text-xs font-bold uppercase tracking-wider text-violet-900 dark:text-violet-300">Why this result?</h4>
+              {analysis.genreObservation && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-200/60 dark:bg-violet-900/60 text-violet-800 dark:text-violet-200 font-medium ml-auto">
+                  {analysis.genreObservation}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+              {analysis.whyThisResult || analysis.summary || "Pattern analysis combines sentence length variation, vocabulary richness, and syntactic predictability to evaluate stylistic consistency."}
+            </p>
+          </div>
+
+          {/* What We Can & Cannot Tell */}
+          <div className="rounded-xl p-4 bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 space-y-2">
+            <div className="flex items-center gap-2">
+              <Info className="w-4 h-4 text-slate-600 dark:text-slate-400 flex-shrink-0" />
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Admissions AI Disclaimer</h4>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-[11px] leading-snug">
+              <div className="text-slate-600 dark:text-slate-400">
+                <strong className="text-emerald-600 dark:text-emerald-400 block mb-0.5">✓ What we can tell:</strong>
+                Stylometric patterns, sentence rhythm, and uniform phrasing.
+              </div>
+              <div className="text-slate-600 dark:text-slate-400">
+                <strong className="text-rose-600 dark:text-rose-400 block mb-0.5">✗ What we cannot tell:</strong>
+                Authorship identity or whether AI was used as a brainstorming tool.
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -314,13 +575,12 @@ export default function EssayView() {
                   <SentenceLegend />
                 </div>
                 <div className="essay-text space-y-4">
-                  {/* Group sentences by paragraph */}
-                  {[0, 1, 2, 3, 4, 5, 6].map(paraIdx => {
-                    const paraSentences = analysis.sentences.filter(s => s.paragraphIndex === paraIdx);
+                  {Array.from(new Set(analysis.sentences.map((s: SentenceAnalysis) => s.paragraphIndex))).sort((a: number, b: number) => a - b).map((paraIdx: number) => {
+                    const paraSentences = analysis.sentences.filter((s: SentenceAnalysis) => s.paragraphIndex === paraIdx);
                     if (!paraSentences.length) return null;
                     return (
                       <p key={paraIdx} className="leading-relaxed">
-                        {paraSentences.map(s => {
+                        {paraSentences.map((s: SentenceAnalysis) => {
                           const c = getSentenceColor(s.label);
                           const isSelected = selectedSentence?.id === s.id;
                           return (
@@ -356,10 +616,10 @@ export default function EssayView() {
                     <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: '#94a3b8' }} />
                     <Tooltip
                       contentStyle={{ background: 'rgba(15,23,42,0.9)', border: 'none', borderRadius: 8, color: '#f1f5f9', fontSize: 12 }}
-                      formatter={(v: number) => [`${v}%`, 'AI Probability']}
+                      formatter={(v: any) => [`${v}%`, 'AI Probability']}
                     />
                     <Bar dataKey="aiProbability" radius={[4, 4, 0, 0]}>
-                      {analysis.paragraphRisks.map((entry, index) => (
+                      {analysis.paragraphRisks.map((entry: any, index: number) => (
                         <Cell key={index} fill={entry.aiProbability > 70 ? '#f43f5e' : entry.aiProbability > 40 ? '#f59e0b' : '#10b981'} />
                       ))}
                     </Bar>
@@ -393,16 +653,52 @@ export default function EssayView() {
                 </div>
               </Card>
               {selectedSentence ? (
-                <Card>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Sparkles className="w-4 h-4 text-violet-600 dark:text-violet-400" />
-                    <p className="text-sm font-semibold text-slate-900 dark:text-white">Selected Sentence</p>
+                <Card className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <FileCheck className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white">Selected Sentence</p>
+                    </div>
+                    <Badge variant={selectedSentence.label === 'ai' ? 'danger' : selectedSentence.label === 'uncertain' ? 'warning' : 'success'}>
+                      {getSentenceColor(selectedSentence.label).label}
+                    </Badge>
                   </div>
-                  <div className={cn('rounded-lg p-3 text-xs leading-relaxed mb-3', getSentenceColor(selectedSentence.label).bg)}>
+
+                  <div className={cn('rounded-lg p-3 text-xs leading-relaxed border', getSentenceColor(selectedSentence.label).bg, getSentenceColor(selectedSentence.label).border)}>
                     "{selectedSentence.text}"
                   </div>
-                  <Button size="sm" className="w-full" rightIcon={<ChevronRight className="w-3.5 h-3.5" />} onClick={() => {}}>
-                    View Full Explanation
+
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-xs font-medium text-slate-600 dark:text-slate-400">
+                      <span>Pattern Signal</span>
+                      <span className={cn('font-bold', getSentenceColor(selectedSentence.label).text)}>{selectedSentence.aiProbability}%</span>
+                    </div>
+                    <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                      <div
+                        className={cn('h-full rounded-full transition-all duration-300', selectedSentence.label === 'ai' ? 'bg-rose-500' : selectedSentence.label === 'uncertain' ? 'bg-amber-500' : 'bg-emerald-500')}
+                        style={{ width: `${selectedSentence.aiProbability}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-lg">
+                    <strong className="block text-slate-700 dark:text-slate-200 mb-0.5">Observation:</strong>
+                    {selectedSentence.explanation}
+                  </div>
+
+                  {selectedSentence.suggestion && (
+                    <div className="text-xs text-violet-700 dark:text-violet-300 leading-relaxed bg-violet-50 dark:bg-violet-950/20 p-2.5 rounded-lg border border-violet-100 dark:border-violet-900/50">
+                      <strong className="block text-violet-800 dark:text-violet-200 mb-0.5">💡 Tip:</strong>
+                      {selectedSentence.suggestion}
+                    </div>
+                  )}
+
+                  <Button size="sm" className="w-full text-xs" rightIcon={<ChevronRight className="w-3.5 h-3.5" />} onClick={() => {
+                    // Triggers the slide-out drawer
+                    const drawerElement = document.getElementById('explainability-drawer');
+                    if (drawerElement) drawerElement.scrollIntoView({ behavior: 'smooth' });
+                  }}>
+                    View Deep Breakdown
                   </Button>
                 </Card>
               ) : (
@@ -449,7 +745,7 @@ export default function EssayView() {
             <Card>
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 rounded-xl bg-violet-50 dark:bg-violet-950/30 flex items-center justify-center">
-                  <Zap className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+                  <Fingerprint className="w-5 h-5 text-violet-600 dark:text-violet-400" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-slate-900 dark:text-white">Your Writing Fingerprint</h3>
@@ -494,7 +790,7 @@ export default function EssayView() {
         {activeTab === 'improvements' && (
           <motion.div key="improvements" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
             <div className="grid sm:grid-cols-2 gap-4">
-              {analysis.improvements.map((imp, i) => (
+              {analysis.improvements.map((imp: any, i: number) => (
                 <motion.div
                   key={imp.id}
                   initial={{ opacity: 0, y: 10 }}

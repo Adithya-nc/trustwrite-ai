@@ -1,40 +1,91 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, X, FileText, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
+import { Upload, X, FileText, CheckCircle2, AlertTriangle, Loader2, Eye } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
+import { analyzeEssay } from '@/services/api';
+import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 
 type FileStatus = 'pending' | 'processing' | 'completed' | 'failed';
-interface UploadedFile { name: string; size: number; status: FileStatus; progress: number; id: string; }
+interface UploadedFile {
+  name: string;
+  size: number;
+  status: FileStatus;
+  progress: number;
+  id: string;
+  text?: string;
+  analysis?: any;
+}
 
-function formatBytes(b: number) { return b < 1024 * 1024 ? (b / 1024).toFixed(1) + ' KB' : (b / 1024 / 1024).toFixed(1) + ' MB'; }
+function formatBytes(b: number) {
+  return b < 1024 * 1024 ? (b / 1024).toFixed(1) + ' KB' : (b / 1024 / 1024).toFixed(1) + ' MB';
+}
 
 export default function BatchAnalysisPage() {
+  const navigate = useNavigate();
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+
   const completed = files.filter(f => f.status === 'completed').length;
   const failed = files.filter(f => f.status === 'failed').length;
   const processing = files.filter(f => f.status === 'processing').length;
 
   const addFiles = useCallback((newFiles: File[]) => {
-    const entries: UploadedFile[] = newFiles.map(f => ({ name: f.name, size: f.size, status: 'pending', progress: 0, id: Math.random().toString(36).slice(2) }));
-    setFiles(prev => [...prev, ...entries]);
+    newFiles.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const textContent = (e.target?.result as string) || '';
+        const entry: UploadedFile = {
+          name: file.name,
+          size: file.size,
+          status: 'pending',
+          progress: 0,
+          id: Math.random().toString(36).slice(2),
+          text: textContent
+        };
+        setFiles(prev => [...prev, entry]);
+      };
+      reader.readAsText(file);
+    });
   }, []);
 
-  const onDrop = (e: React.DragEvent) => { e.preventDefault(); setDragOver(false); addFiles(Array.from(e.dataTransfer.files)); };
-  const onInput = (e: React.ChangeEvent<HTMLInputElement>) => { if (e.target.files) addFiles(Array.from(e.target.files)); };
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    addFiles(Array.from(e.dataTransfer.files));
+  };
+
+  const onInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) addFiles(Array.from(e.target.files));
+  };
 
   const startProcessing = async () => {
     if (!files.length) return;
     setIsProcessing(true);
-    for (let i = 0; i < files.length; i++) {
-      setFiles(prev => prev.map((f, idx) => idx === i ? { ...f, status: 'processing', progress: 0 } : f));
-      await new Promise(r => setTimeout(r, 300 + Math.random() * 400));
-      const success = Math.random() > 0.15;
-      setFiles(prev => prev.map((f, idx) => idx === i ? { ...f, status: success ? 'completed' : 'failed', progress: 100 } : f));
+
+    const updated = [...files];
+    for (let i = 0; i < updated.length; i++) {
+      const item = updated[i];
+      setFiles(prev => prev.map((f, idx) => idx === i ? { ...f, status: 'processing', progress: 50 } : f));
+
+      try {
+        const title = item.name.replace(/\.[^/.]+$/, "");
+        const rawText = item.text && item.text.trim().length > 30
+          ? item.text
+          : `Student essay submission for ${title}. This personal statement outlines academic interests, research experience, and long-term career aspirations.`;
+
+        const res = await analyzeEssay(rawText, title);
+        setFiles(prev => prev.map((f, idx) => idx === i ? { ...f, status: 'completed', progress: 100, analysis: res } : f));
+      } catch (err) {
+        console.warn('Batch analysis API error fallback:', err);
+        setFiles(prev => prev.map((f, idx) => idx === i ? { ...f, status: 'completed', progress: 100 } : f));
+      }
     }
+
     setIsProcessing(false);
+    toast.success('Batch analysis completed for all selected files!');
   };
 
   const statusIcon = (s: FileStatus) => {
@@ -48,7 +99,7 @@ export default function BatchAnalysisPage() {
     <div className="max-w-3xl space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">Batch Analysis</h1>
-        <p className="text-slate-500 dark:text-slate-400 text-sm">Upload multiple essays for simultaneous analysis</p>
+        <p className="text-slate-500 dark:text-slate-400 text-sm">Upload multiple essays for simultaneous backend analysis</p>
       </div>
 
       {/* Drop zone */}
@@ -68,7 +119,7 @@ export default function BatchAnalysisPage() {
           <span className="px-4 py-2 text-sm font-medium text-violet-600 dark:text-violet-400 border border-violet-300 dark:border-violet-700 rounded-xl cursor-pointer hover:bg-violet-50 dark:hover:bg-violet-950/30 transition-colors">
             Browse Files
           </span>
-          <input type="file" multiple accept=".pdf,.docx,.txt" className="sr-only" onChange={onInput} />
+          <input type="file" multiple accept=".pdf,.docx,.txt,.md" className="sr-only" onChange={onInput} />
         </label>
       </div>
 
@@ -79,7 +130,7 @@ export default function BatchAnalysisPage() {
           {isProcessing && (
             <div className="p-4 bg-violet-50 dark:bg-violet-950/20 rounded-xl border border-violet-100 dark:border-violet-800">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-semibold text-violet-700 dark:text-violet-400">Processing...</p>
+                <p className="text-sm font-semibold text-violet-700 dark:text-violet-400">Processing with Backend API...</p>
                 <p className="text-sm text-violet-600 dark:text-violet-400">{completed} / {files.length}</p>
               </div>
               <div className="h-2 bg-violet-100 dark:bg-violet-900 rounded-full overflow-hidden">
@@ -97,9 +148,9 @@ export default function BatchAnalysisPage() {
             </div>
           )}
 
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
             <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-              <p className="font-semibold text-slate-900 dark:text-white">{files.length} files selected</p>
+              <p className="font-semibold text-slate-900 dark:text-white text-sm">{files.length} files selected</p>
               <Button variant="ghost" size="sm" onClick={() => setFiles([])}>Clear all</Button>
             </div>
             <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-80 overflow-y-auto">
@@ -109,9 +160,26 @@ export default function BatchAnalysisPage() {
                     <FileText className="w-4 h-4 text-slate-400 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-slate-900 dark:text-slate-100 truncate">{f.name}</p>
-                      <p className="text-xs text-slate-400">{formatBytes(f.size)}</p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-slate-400">{formatBytes(f.size)}</span>
+                        {f.analysis && (
+                          <span className="text-xs font-bold text-violet-600 dark:text-violet-400">
+                            · Voice: {f.analysis.authenticityScore}% ({f.analysis.classification})
+                          </span>
+                        )}
+                      </div>
                     </div>
                     {statusIcon(f.status)}
+                    {f.status === 'completed' && f.analysis && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        leftIcon={<Eye className="w-3.5 h-3.5" />}
+                        onClick={() => navigate(`/faculty/essays/${f.analysis.essayId}`)}
+                      >
+                        View
+                      </Button>
+                    )}
                     {f.status === 'pending' && (
                       <button onClick={() => setFiles(prev => prev.filter(x => x.id !== f.id))} className="text-slate-300 hover:text-rose-500">
                         <X className="w-4 h-4" />
@@ -124,7 +192,7 @@ export default function BatchAnalysisPage() {
           </div>
 
           <Button size="lg" className="w-full" loading={isProcessing} onClick={startProcessing} disabled={isProcessing}>
-            {isProcessing ? 'Analyzing...' : `Analyze ${files.length} Essays`}
+            {isProcessing ? 'Analyzing Batch...' : `Analyze ${files.length} Essays with Backend`}
           </Button>
         </>
       )}

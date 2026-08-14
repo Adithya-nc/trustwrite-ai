@@ -1,6 +1,5 @@
-@import "tailwindcss";
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
 
 /* ─── Design Tokens ─────────────────────────────────────────────────────── */
 @theme {
@@ -34,20 +33,18 @@ html {
   scroll-behavior: smooth;
 }
 
-body {
-  font-family: 'Inter', system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  @apply bg-white text-slate-900;
-}
-
-.dark body {
-  @apply bg-slate-950 text-slate-50;
-}
-
-/* ─── Dark Mode ──────────────────────────────────────────────────────────── */
-.dark {
+html.dark,
+html.dark body {
+  background-color: #020617;
+  color: #f8fafc;
   color-scheme: dark;
+}
+
+html:not(.dark),
+html:not(.dark) body {
+  background-color: #ffffff;
+  color: #0f172a;
+  color-scheme: light;
 }
 
 /* ─── Scrollbar ──────────────────────────────────────────────────────────── */
@@ -84,20 +81,20 @@ body {
 .skeleton {
   background: linear-gradient(
     90deg,
-    theme(colors.slate.100) 25%,
-    theme(colors.slate.50) 50%,
-    theme(colors.slate.100) 75%
+    #f1f5f9 25%,
+    #f8fafc 50%,
+    #f1f5f9 75%
   );
   background-size: 200% auto;
   animation: shimmer 1.5s ease-in-out infinite;
 }
 
-.dark .skeleton {
+html.dark .skeleton {
   background: linear-gradient(
     90deg,
-    theme(colors.slate.800) 25%,
-    theme(colors.slate.700) 50%,
-    theme(colors.slate.800) 75%
+    #1e293b 25%,
+    #334155 50%,
+    #1e293b 75%
   );
   background-size: 200% auto;
   animation: shimmer 1.5s ease-in-out infinite;
@@ -115,27 +112,45 @@ body {
 
 /* ─── Sentence Highlighting ──────────────────────────────────────────────── */
 .sentence-human {
-  @apply bg-emerald-50 dark:bg-emerald-950/20 border-b-2 border-emerald-400 cursor-pointer transition-all duration-200;
+  background-color: rgba(16, 185, 129, 0.18);
+  border-bottom: 2px solid #10b981;
+  padding: 2px 3px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 .sentence-human:hover,
 .sentence-human.selected {
-  @apply bg-emerald-100 dark:bg-emerald-900/40;
+  background-color: rgba(16, 185, 129, 0.35);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.4);
 }
 
 .sentence-uncertain {
-  @apply bg-amber-50 dark:bg-amber-950/20 border-b-2 border-amber-400 cursor-pointer transition-all duration-200;
+  background-color: rgba(245, 158, 11, 0.20);
+  border-bottom: 2px solid #f59e0b;
+  padding: 2px 3px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 .sentence-uncertain:hover,
 .sentence-uncertain.selected {
-  @apply bg-amber-100 dark:bg-amber-900/40;
+  background-color: rgba(245, 158, 11, 0.38);
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.4);
 }
 
 .sentence-ai {
-  @apply bg-rose-50 dark:bg-rose-950/20 border-b-2 border-rose-400 cursor-pointer transition-all duration-200;
+  background-color: rgba(244, 63, 94, 0.20);
+  border-bottom: 2px solid #f43f5e;
+  padding: 2px 3px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 .sentence-ai:hover,
 .sentence-ai.selected {
-  @apply bg-rose-100 dark:bg-rose-900/40;
+  background-color: rgba(244, 63, 94, 0.38);
+  box-shadow: 0 0 0 2px rgba(244, 63, 94, 0.4);
 }
 
 /* ─── Prose ──────────────────────────────────────────────────────────────── */

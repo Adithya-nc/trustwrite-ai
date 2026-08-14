@@ -4,10 +4,10 @@ import { motion, AnimatePresence, useInView } from 'framer-motion';
 import LandingNavbar from '@/components/layout/LandingNavbar';
 import {
   ArrowRight, CheckCircle2, Brain, Search, Lightbulb, TrendingUp,
-  Shield, Zap, BarChart3, BookOpen, Users, Building2, ChevronDown,
+  Shield, BarChart3, BookOpen, Users, Building2, ChevronDown,
   Star, FileText, AlertTriangle, CheckCheck, Upload, ScanLine,
   GraduationCap, ClipboardList, Download, Eye, Check, X,
-  Sparkles, Globe, Award, Clock,
+  GitCompare, Globe, Award, Clock,
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { landingDemoSentences } from '@/mock';
@@ -75,21 +75,7 @@ function HeroSection() {
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           {/* Left */}
           <div>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="flex flex-wrap gap-2 mb-6"
-            >
-              <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-violet-100 dark:bg-violet-950/50 text-violet-700 dark:text-violet-400 text-xs font-semibold border border-violet-200 dark:border-violet-800">
-                <Zap className="w-3.5 h-3.5" />
-                AI-Powered Essay Analysis
-              </span>
-              <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 text-xs font-semibold border border-emerald-200 dark:border-emerald-800">
-                <Award className="w-3.5 h-3.5" />
-                FERPA Compliant
-              </span>
-            </motion.div>
+
 
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
@@ -142,9 +128,9 @@ function HeroSection() {
               className="flex items-center gap-8"
             >
               {[
-                { label: '99.2%', sub: 'Detection Accuracy' },
+                { label: '20+', sub: 'Stylometric Metrics' },
                 { label: '< 30s', sub: 'Analysis Time' },
-                { label: '50+', sub: 'Universities' },
+                { label: '100%', sub: 'Evidence-Based' },
               ].map(({ label, sub }) => (
                 <div key={sub} className="flex flex-col">
                   <p className="text-2xl font-black text-slate-900 dark:text-white">{label}</p>
@@ -295,11 +281,11 @@ function StatsSection() {
   const isInView = useInView(ref, { once: true, margin: '-100px' });
 
   const stats = [
-    { icon: FileText, value: '1.2M+', label: 'Essays Analyzed', color: 'text-violet-500' },
-    { icon: Globe, value: '50+', label: 'Partner Universities', color: 'text-indigo-500' },
-    { icon: Award, value: '99.2%', label: 'Detection Accuracy', color: 'text-emerald-500' },
-    { icon: Clock, value: '< 30s', label: 'Average Analysis Time', color: 'text-amber-500' },
-    { icon: Users, value: '14K+', label: 'Active Users', color: 'text-rose-500' },
+    { icon: FileText, value: '120K+', label: 'Essays Analyzed', color: 'text-violet-500' },
+    { icon: Globe, value: '50+', label: 'Partner Institutions', color: 'text-indigo-500' },
+    { icon: Award, value: '20+', label: 'Stylometric Dimensions', color: 'text-emerald-500' },
+    { icon: Clock, value: '< 30s', label: 'Analysis Time', color: 'text-amber-500' },
+    { icon: Users, value: '100%', label: 'Explainable Reasoning', color: 'text-rose-500' },
   ];
 
   return (
@@ -653,7 +639,7 @@ function FeaturesSection() {
     { icon: Search, title: 'Explainability First', desc: 'Every flag includes a human-readable explanation of exactly what was detected.', tag: 'Differentiator' },
     { icon: BarChart3, title: 'Writing Analytics', desc: 'Track vocabulary diversity, sentence variation, readability, and more.', tag: 'Analytics' },
     { icon: FileText, title: 'Writing Fingerprint', desc: 'A unique signature of each writer\'s style patterns.', tag: 'Advanced' },
-    { icon: Sparkles, title: 'Essay Comparison', desc: 'Compare multiple essays for style consistency and similarity.', tag: 'Advanced' },
+    { icon: GitCompare, title: 'Essay Comparison', desc: 'Compare multiple essays for style consistency and similarity.', tag: 'Advanced' },
     { icon: CheckCheck, title: 'Professional Reports', desc: 'Download full PDF reports for institutional records.', tag: 'Reports' },
     { icon: Shield, title: 'Role-Based Access', desc: 'Separate student, faculty, and admin dashboards with appropriate permissions.', tag: 'Security' },
     { icon: Users, title: 'Batch Processing', desc: 'Faculty can analyze entire cohorts at once for efficient review.', tag: 'Efficiency' },
@@ -779,7 +765,7 @@ function PricingSection() {
             Simple, transparent pricing.
           </h2>
           <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-            Start free. Scale as you grow. No hidden fees, no credit card required.
+            Flexible plans designed for students, faculty reviewers, and admissions teams.
           </p>
         </motion.div>
 
@@ -960,15 +946,11 @@ function CTASection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 text-white text-xs font-semibold mb-6 border border-white/20">
-            <Sparkles className="w-3.5 h-3.5" />
-            Start free — no credit card required
-          </div>
           <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
             Ready to bring transparency to your admissions?
           </h2>
           <p className="text-violet-200 text-lg mb-8 max-w-xl mx-auto">
-            Join 14,000+ students and faculty who trust TrustWrite AI for fair, explainable analysis.
+            Join thousands of students and educators using TrustWrite AI for explainable essay analysis.
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
             <Button
@@ -989,7 +971,7 @@ function CTASection() {
             </Button>
           </div>
           <div className="flex items-center justify-center gap-6 mt-8">
-            {['Free to start', 'No credit card', 'FERPA-compliant'].map((t) => (
+            {['Explainable Stylometry', 'FERPA-Compliant', 'Privacy Protected'].map((t) => (
               <div key={t} className="flex items-center gap-1.5 text-violet-200 text-sm">
                 <CheckCircle2 className="w-4 h-4" />
                 {t}

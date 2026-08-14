@@ -87,7 +87,7 @@ export const mockEssays: Essay[] = [
   {
     id: 'e2',
     title: 'Why I Chose Engineering',
-    content: '',
+    content: `In today's rapidly evolving technological landscape, the intersection of artificial intelligence and mechanical engineering presents unprecedented opportunities for advancement. The integration of algorithmic modeling into modern applications has fundamentally transformed how we approach complex structural challenges.\n\nFurthermore, it is essential to acknowledge that the proliferation of data-driven methodologies has significantly impacted various sectors of the industrial economy, enabling organizations to leverage insights derived from analytics platforms.\n\nMy academic journey has been defined by a persistent pursuit of excellence and a deep commitment to mastering fundamental principles of software systems. The prospective opportunity to contribute to a forward-thinking university represents a pivotal milestone in my academic journey.`,
     wordCount: 523,
     uploadedAt: '2024-11-18T10:00:00Z',
     status: 'analyzed',
@@ -99,7 +99,7 @@ export const mockEssays: Essay[] = [
   {
     id: 'e3',
     title: 'Leadership Through Adversity',
-    content: '',
+    content: `Our robotics team had three weeks left before the regional championship when our primary drive motor burned out. As team captain, I watched our members freeze in panic. We didn't have the budget to expedite a new part from Germany.\n\nInstead of giving up, I gathered the mechanical crew and proposed cannibalizing components from our previous year's prototype. We spent forty-eight hours machining custom aluminum brackets in our high school workshop.\n\nWhen our robot drove onto the competition field and successfully scored the winning autonomous goal, the entire gymnasium erupted in cheers. That season taught me that resourcefulness and collective trust matter far more than having the most expensive equipment.`,
     wordCount: 412,
     uploadedAt: '2024-11-15T16:45:00Z',
     status: 'analyzed',
@@ -111,7 +111,7 @@ export const mockEssays: Essay[] = [
   {
     id: 'e4',
     title: 'Community Service and Growth',
-    content: '',
+    content: `Moving to America at age twelve was the hardest thing I had ever done. I didn't speak English, and my first day of middle school in Ohio felt terrifying. Kids would ask me questions, and I would just nod nervously, hoping I wasn't agreeing to something embarrassing.\n\nBut music became my universal language. I had played the cello since I was six, and joining the school orchestra gave me a place where I didn't need words to fit in.\n\nSitting in the third chair section, reading sheet music with students from completely different backgrounds, I realized that harmony comes from blending different voices together. In high school, I organized a community concert series that raised funds for local immigrant family services.`,
     wordCount: 398,
     uploadedAt: '2024-11-10T09:20:00Z',
     status: 'analyzed',
@@ -123,7 +123,7 @@ export const mockEssays: Essay[] = [
   {
     id: 'e5',
     title: 'My Passion for Research',
-    content: '',
+    content: `In the basement of our county courthouse, I discovered three dusty cardboard boxes filled with handwritten letters from local factory workers dating back to the 1920s. As a junior volunteer for the historical society, my task was merely to catalog the dates.\n\nBut as I read through their stories of labor strikes, family struggles, and small community victories, I became obsessed with preserving their voices. I spent my entire summer digitizing over 400 pages of correspondence, transcribing brittle ink, and creating a searchable digital archive for local schools.\n\nHistory is not just a collection of dates in a textbook; it is the lived heartbeat of ordinary people whose sacrifices built the towns we live in today.`,
     wordCount: 445,
     uploadedAt: '2024-11-05T13:00:00Z',
     status: 'analyzed',
@@ -136,7 +136,7 @@ export const mockEssays: Essay[] = [
   {
     id: 'e6',
     title: 'Why I Want to Study Medicine',
-    content: '',
+    content: `Advances in biomedical science and healthcare delivery have revolutionized our approach to disease prevention and patient care. The synthesis of empirical research and clinical practice serves as the cornerstone of contemporary medical innovation.\n\nAdditionally, the integration of multi-omics data and personalized medicine frameworks offers unprecedented potential to improve patient outcomes across diverse demographic groups.\n\nMy commitment to pursuing a career in healthcare stems from a profound dedication to scientific inquiry and human well-being. Engaging in academic research and clinical observation has reinforced my passion for biomedical innovation.`,
     wordCount: 502,
     uploadedAt: '2024-11-19T11:00:00Z',
     status: 'analyzed',
@@ -148,7 +148,7 @@ export const mockEssays: Essay[] = [
   {
     id: 'e7',
     title: 'Environmental Science and My Future',
-    content: '',
+    content: `My passion for environmental policy began in my own backyard—literally. Living adjacent to an industrial district in Detroit, I noticed how air quality alerts frequently cancelled our outdoor gym classes while suburban schools twenty miles away played outside freely.\n\nDetermined to understand the disparity, I partnered with a local university lab to install low-cost particulate matter sensors across five neighborhoods. Collecting data over six months, I drafted a comprehensive 15-page report highlighting localized pollution hotspots.\n\nPresenting our findings to the city council was nerve-wracking, but seeing our data cited in a new municipal zoning proposal was electrifying. Environmental justice is not just an abstract academic topic to me; it is a lived reality for thousands of families.`,
     wordCount: 467,
     uploadedAt: '2024-11-17T15:30:00Z',
     status: 'analyzed',

@@ -59,17 +59,48 @@ export default function AnalyzePage() {
     if (f) handleFileDrop(f);
   };
 
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
   const handleAnalyze = async () => {
-    if (mode === 'upload' && !file) { setFileError('Please upload a file first.'); return; }
-    if (mode === 'paste') {
+    let essayText = '';
+    let essayTitle = 'Submitted Essay';
+
+    if (mode === 'upload') {
+      if (!file) { setFileError('Please upload a file first.'); return; }
+      try {
+        essayText = await file.text();
+        essayTitle = file.name;
+      } catch (err) {
+        setFileError('Could not read file text.');
+        return;
+      }
+    } else {
       if (!text.trim()) { setTextError('Please paste or type your essay.'); return; }
       if (countWords(text) < 50) { setTextError('Essay must be at least 50 words.'); return; }
+      essayText = text;
       setPastedText(text);
     }
-    toast.loading('Preparing essay...', { id: 'analyze' });
-    await new Promise(r => setTimeout(r, 500));
-    toast.dismiss('analyze');
-    navigate('/student/essays/e1'); // Navigate to mock analysis
+
+    setIsAnalyzing(true);
+    toast.loading('Analyzing essay with statistical NLP model...', { id: 'analyze' });
+
+    try {
+      const { analyzeEssay } = await import('@/services/api');
+      const result = await analyzeEssay(essayText, essayTitle);
+
+      sessionStorage.setItem(`analysis_${result.essayId}`, JSON.stringify(result));
+      sessionStorage.setItem('latest_analysis_id', result.essayId);
+      sessionStorage.setItem(`essay_text_${result.essayId}`, essayText);
+      sessionStorage.setItem(`essay_title_${result.essayId}`, essayTitle);
+
+      toast.success('Analysis complete!', { id: 'analyze' });
+      navigate(`/student/essays/${result.essayId}`);
+    } catch (err: any) {
+      const msg = err.response?.data?.detail || 'Failed to connect to backend server. Ensure FastAPI is running on port 8000.';
+      toast.error(msg, { id: 'analyze' });
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const wordCount = countWords(text);

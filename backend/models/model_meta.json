@@ -1,0 +1,33 @@
+{
+  "model_name": "Logistic Regression",
+  "model_version": "1.0.0",
+  "accuracy": 1.0,
+  "precision": 1.0,
+  "recall": 1.0,
+  "f1_score": 1.0,
+  "roc_auc": 1.0,
+  "false_positive_rate": 0.0,
+  "false_negative_rate": 0.0,
+  "confusion_matrix": {
+    "tn": 6,
+    "fp": 0,
+    "fn": 0,
+    "tp": 6
+  },
+  "feature_names": [
+    "avg_sent_len",
+    "sent_len_std",
+    "burstiness",
+    "ttr",
+    "yules_k",
+    "avg_word_len",
+    "function_word_ratio",
+    "pronoun_1st_ratio",
+    "transition_word_ratio",
+    "passive_ratio",
+    "flesch_reading_ease",
+    "gunning_fog",
+    "ngram_repetition_rate",
+    "para_len_var"
+  ]
+}

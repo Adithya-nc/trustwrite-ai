@@ -94,10 +94,11 @@ export interface ParagraphRisk {
 
 export interface EssayAnalysis {
   essayId: string;
-  authenticityScore: number;      // 0–100
-  aiProbability: number;          // 0–100
+  authenticityScore: number;      // 0–100 (Personal Voice / Human Signal)
+  aiProbability: number;          // 0–100 (AI-Like Pattern Signal)
   confidence: 'low' | 'medium' | 'high';
-  classification: string;          // e.g. "Likely Human", "Likely AI"
+  evidenceStrength?: 'Limited' | 'Moderate' | 'Strong';
+  classification: string;          // e.g. "Likely Human", "Mostly Human", "Mixed / Uncertain", "Likely AI-Assisted"
   writingQuality: number;          // 0–100
   originality: number;             // 0–100
   sentences: SentenceAnalysis[];
@@ -106,6 +107,10 @@ export interface EssayAnalysis {
   paragraphRisks: ParagraphRisk[];
   improvements: Improvement[];
   analyzedAt: string;
+  summary?: string;
+  whyThisResult?: string;
+  genreObservation?: string;
+  limitations?: string[];
 }
 
 // ─── Improvements ────────────────────────────────────────────────────────────

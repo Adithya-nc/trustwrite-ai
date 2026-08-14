@@ -8,7 +8,7 @@ import './index.css'
   try {
     const saved = localStorage.getItem('trustwrite-theme');
     const parsed = saved ? JSON.parse(saved) : null;
-    const theme = parsed?.state?.theme ?? 'light';
+    const theme = parsed?.state?.theme ?? 'dark';
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
     } else {
