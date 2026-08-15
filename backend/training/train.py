@@ -21,7 +21,9 @@ FEATURE_NAMES = [
     'avg_sent_len', 'sent_len_std', 'burstiness', 'ttr', 'yules_k',
     'avg_word_len', 'function_word_ratio', 'pronoun_1st_ratio',
     'transition_word_ratio', 'passive_ratio', 'flesch_reading_ease',
-    'gunning_fog', 'ngram_repetition_rate', 'para_len_var'
+    'gunning_fog', 'ngram_repetition_rate', 'para_len_var',
+    'lexical_sophistication', 'sentence_starter_diversity',
+    'contraction_ratio', 'punctuation_variety', 'pos_distribution_entropy'
 ]
 
 def extract_dataset_features(df: pd.DataFrame, extractor: FeatureExtractor) -> Tuple[np.ndarray, np.ndarray]:

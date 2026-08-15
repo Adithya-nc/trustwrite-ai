@@ -19,7 +19,9 @@ FEATURE_NAMES = [
     'avg_sent_len', 'sent_len_std', 'burstiness', 'ttr', 'yules_k',
     'avg_word_len', 'function_word_ratio', 'pronoun_1st_ratio',
     'transition_word_ratio', 'passive_ratio', 'flesch_reading_ease',
-    'gunning_fog', 'ngram_repetition_rate', 'para_len_var'
+    'gunning_fog', 'ngram_repetition_rate', 'para_len_var',
+    'lexical_sophistication', 'sentence_starter_diversity',
+    'contraction_ratio', 'punctuation_variety', 'pos_distribution_entropy'
 ]
 
 class EssayAnalyzer:
@@ -31,6 +33,7 @@ class EssayAnalyzer:
         self.scaler = None
         self.classifier = None
         self.model_metadata = {}
+        self.active_feature_names = FEATURE_NAMES
         self._load_model()
 
     def _load_model(self):
@@ -38,16 +41,19 @@ class EssayAnalyzer:
             try:
                 bundle = joblib.load(MODEL_PATH)
                 self.scaler = bundle.get('scaler')
-                self.classifier = bundle.get('model')
+                self.classifier = bundle.get('classifier') or bundle.get('model')
                 self.model_metadata = bundle.get('metrics', {})
+                self.active_feature_names = bundle.get('feature_names', FEATURE_NAMES)
                 self.model_loaded = True
                 print(f"[OK] EssayDetector loaded successfully from {MODEL_PATH}")
             except Exception as e:
                 print(f"[WARNING] Failed to load model from {MODEL_PATH}: {e}")
                 self.model_loaded = False
+                self.active_feature_names = FEATURE_NAMES
         else:
             print(f"[INFO] Model bundle not found at {MODEL_PATH}. Running in heuristic mode.")
             self.model_loaded = False
+            self.active_feature_names = FEATURE_NAMES
 
     def analyze_essay(self, raw_text: str, essay_id: str = "ess_live") -> EssayAnalysisResponse:
         now_iso = datetime.now(timezone.utc).isoformat()
@@ -183,14 +189,23 @@ class EssayAnalyzer:
         # 3. Model Inference (if model file loaded)
         raw_classifier_prob = 50.0
         if self.model_loaded and self.scaler and self.classifier:
-            X_vec = np.array([[doc_feats[fn] for fn in FEATURE_NAMES]])
-            X_scaled = self.scaler.transform(X_vec)
-            if hasattr(self.classifier, "predict_proba"):
-                probs = self.classifier.predict_proba(X_scaled)[0]
-                raw_classifier_prob = float(probs[1]) * 100.0 if len(probs) > 1 else float(probs[0]) * 100.0
+            active_feats = getattr(self, 'active_feature_names', FEATURE_NAMES)
+            expected_n_features = getattr(self.scaler, 'n_features_in_', len(active_feats))
+
+            if len(active_feats) != expected_n_features:
+                print(f"[WARNING] Feature dimension mismatch: model expects {expected_n_features} features, but {len(active_feats)} provided in vector. Falling back to heuristic mode.")
             else:
-                pred = self.classifier.predict(X_scaled)[0]
-                raw_classifier_prob = 80.0 if pred == 1 else 20.0
+                try:
+                    X_vec = np.array([[doc_feats[fn] for fn in active_feats]])
+                    X_scaled = self.scaler.transform(X_vec)
+                    if hasattr(self.classifier, "predict_proba"):
+                        probs = self.classifier.predict_proba(X_scaled)[0]
+                        raw_classifier_prob = float(probs[1]) * 100.0 if len(probs) > 1 else float(probs[0]) * 100.0
+                    else:
+                        pred = self.classifier.predict(X_scaled)[0]
+                        raw_classifier_prob = 80.0 if pred == 1 else 20.0
+                except Exception as e:
+                    print(f"[WARNING] Model inference failed: {e}. Falling back to heuristic mode.")
 
         # Composite AI Pattern Signal: Multi-Feature Weighted Fusion
         signals_list = [burst_signal, vocab_signal, trans_signal, voice_signal, syntax_signal]

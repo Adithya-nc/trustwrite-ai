@@ -28,6 +28,11 @@
     "flesch_reading_ease",
     "gunning_fog",
     "ngram_repetition_rate",
-    "para_len_var"
+    "para_len_var",
+    "lexical_sophistication",
+    "sentence_starter_diversity",
+    "contraction_ratio",
+    "punctuation_variety",
+    "pos_distribution_entropy"
   ]
 }
