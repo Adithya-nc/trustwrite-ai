@@ -23,6 +23,19 @@ TRANSITION_WORDS = {
 
 PASSIVE_AUXILIARIES = {'be', 'am', 'is', 'are', 'was', 'were', 'been', 'being', 'get', 'gets', 'got', 'getting'}
 
+COMMON_CONTRACTIONS = {
+    "i'm", "i've", "i'll", "i'd",
+    "don't", "doesn't", "didn't", "can't", "couldn't", "won't", "wouldn't",
+    "isn't", "aren't", "wasn't", "weren't", "haven't", "hasn't", "hadn't",
+    "shouldn't", "mustn't", "mightn't", "shan't",
+    "it's", "that's", "there's", "here's", "what's", "who's", "where's", "when's", "why's", "how's",
+    "he's", "she's", "let's",
+    "they're", "we're", "you're",
+    "they've", "we've", "you've", "could've", "should've", "would've", "might've", "must've",
+    "they'll", "we'll", "you'll", "he'll", "she'll", "it'll", "that'll", "there'll",
+    "they'd", "we'd", "you'd", "he'd", "she'd", "it'd", "that'd", "there'd"
+}
+
 class FeatureExtractor:
     def __init__(self, spacy_nlp=None):
         self.nlp = spacy_nlp
@@ -152,7 +165,13 @@ class FeatureExtractor:
                 'sent_len_std': 0.0, 'burstiness': 0.0, 'ttr': 0.0, 'yules_k': 0.0,
                 'avg_word_len': 0.0, 'function_word_ratio': 0.0, 'pronoun_1st_ratio': 0.0,
                 'transition_word_ratio': 0.0, 'passive_ratio': 0.0, 'flesch_reading_ease': 0.0,
-                'gunning_fog': 0.0, 'ngram_repetition_rate': 0.0, 'para_len_var': 0.0
+                'gunning_fog': 0.0, 'ngram_repetition_rate': 0.0, 'para_len_var': 0.0,
+                'entity_density': 0.0,
+                'lexical_sophistication': 0.0,
+                'sentence_starter_diversity': 0.0,
+                'contraction_ratio': 0.0,
+                'punctuation_variety': 0.0,
+                'pos_distribution_entropy': 0.0
             }
             return doc_feats, [], sentences
 
@@ -225,6 +244,65 @@ class FeatureExtractor:
         numbers_count = len(re.findall(r'\b\d{1,4}(?:st|nd|rd|th)?\b', text))
         entity_density = float((capitalized_words + (numbers_count * 2.0)) / float(max(1, num_words)))
 
+        # --- New Features (Phase 2A) ---
+        # 1. Lexical Sophistication: words with length >= 7 divided by total word count
+        long_words_count = sum(1 for w in words if len(w) >= 7)
+        lexical_sophistication = float(long_words_count / float(num_words))
+
+        # 2. Sentence Starter Diversity: unique first normalized words / total sentences
+        starters = []
+        for s in sentences:
+            s_words = self.tokenize_words(s)
+            if s_words:
+                starters.append(s_words[0])
+        unique_starters = len(set(starters))
+        sentence_starter_diversity = float(unique_starters / float(num_sents))
+
+        # 3. Contraction Ratio: common English contraction forms / total words
+        norm_text = text.replace("’", "'").replace("`", "'").lower()
+        words_with_apos = re.findall(r"\b[a-zA-Z0-9']+\b", norm_text)
+        contractions_count = sum(
+            1 for w in words_with_apos
+            if w in COMMON_CONTRACTIONS or re.match(r"^[a-z]+'(?:m|ve|ll|d|re|t)$", w)
+        )
+        contraction_ratio = float(contractions_count / float(num_words))
+
+        # 4. Punctuation Variety: distinct punctuation categories among 7 normalized to 0.0-1.0
+        punct_categories = 0
+        if ',' in text:
+            punct_categories += 1
+        if ';' in text:
+            punct_categories += 1
+        if ':' in text:
+            punct_categories += 1
+        if '?' in text:
+            punct_categories += 1
+        if '!' in text:
+            punct_categories += 1
+        if any(d in text for d in ('-', '–', '—')):
+            punct_categories += 1
+        if '(' in text or ')' in text:
+            punct_categories += 1
+        punctuation_variety = float(punct_categories / 7.0)
+
+        # 5. POS Distribution Entropy: Shannon entropy over POS tag distribution if spaCy NLP available
+        pos_distribution_entropy = 0.0
+        if self.nlp:
+            try:
+                doc = self.nlp(text)
+                pos_tags = [token.pos_ for token in doc if not token.is_space]
+                if pos_tags:
+                    tag_counts = {}
+                    for tag in pos_tags:
+                        tag_counts[tag] = tag_counts.get(tag, 0) + 1
+                    total_pos = len(pos_tags)
+                    pos_distribution_entropy = float(-sum(
+                        (c / float(total_pos)) * math.log2(c / float(total_pos))
+                        for c in tag_counts.values()
+                    ))
+            except Exception:
+                pos_distribution_entropy = 0.0
+
         doc_feats = {
             'total_words': float(num_words),
             'total_sentences': float(num_sents),
@@ -242,7 +320,12 @@ class FeatureExtractor:
             'gunning_fog': float(gunning_fog),
             'ngram_repetition_rate': float(ngram_repetition_rate),
             'para_len_var': float(para_len_var),
-            'entity_density': float(entity_density)
+            'entity_density': float(entity_density),
+            'lexical_sophistication': float(lexical_sophistication),
+            'sentence_starter_diversity': float(sentence_starter_diversity),
+            'contraction_ratio': float(contraction_ratio),
+            'punctuation_variety': float(punctuation_variety),
+            'pos_distribution_entropy': float(pos_distribution_entropy)
         }
 
         return doc_feats, sent_features, sentences
