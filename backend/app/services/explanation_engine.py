@@ -112,6 +112,12 @@ class ExplanationEngine:
         entity_density = doc_feats.get('entity_density', 0.0)
         trans_ratio = doc_feats.get('transition_word_ratio', 0.0)
 
+        lex_soph = doc_feats.get('lexical_sophistication', 0.0)
+        starter_div = doc_feats.get('sentence_starter_diversity', 0.0)
+        contra_ratio = doc_feats.get('contraction_ratio', 0.0)
+        punct_var = doc_feats.get('punctuation_variety', 0.0)
+        pos_entropy = doc_feats.get('pos_distribution_entropy', 0.0)
+
         # Genre observation
         if entity_density > 0.07 and pronoun_1st < 0.01:
             genre_obs = "Factual / Encyclopedic / Historical"
@@ -141,6 +147,28 @@ class ExplanationEngine:
 
         if trans_ratio > 0.025:
             reasons.append("frequent formal transitional connectors ('furthermore', 'moreover')")
+
+        # New NLP feature observations (at most 2 added to reasons)
+        new_reasons = []
+        if starter_div < 0.40 and starter_div > 0:
+            new_reasons.append("low sentence-starter diversity")
+        elif starter_div > 0.70:
+            new_reasons.append("varied sentence openings")
+
+        if contra_ratio > 0.015:
+            new_reasons.append("natural use of contractions")
+        elif contra_ratio == 0 and total_words > 50:
+            new_reasons.append("consistently formal contraction profile")
+
+        if lex_soph > 0.30:
+            new_reasons.append("relatively sophisticated vocabulary")
+        if punct_var > 0.40:
+            new_reasons.append("varied punctuation usage")
+        if pos_entropy > 2.5:
+            new_reasons.append("diverse grammatical-category distribution")
+
+        for nr in new_reasons[:2]:
+            reasons.append(nr)
 
         if not reasons:
             reasons.append("balanced structural pacing and standard vocabulary distribution")
