@@ -188,21 +188,28 @@ class EssayAnalyzer:
 
         # 3. Model Inference (if model file loaded)
         raw_classifier_prob = 50.0
-        if self.model_loaded and self.scaler and self.classifier:
+        if self.model_loaded and self.classifier:
             active_feats = getattr(self, 'active_feature_names', FEATURE_NAMES)
-            expected_n_features = getattr(self.scaler, 'n_features_in_', len(active_feats))
+            if self.scaler is not None:
+                expected_n_features = getattr(self.scaler, 'n_features_in_', len(active_feats))
+            else:
+                expected_n_features = getattr(self.classifier, 'n_features_in_', len(active_feats))
 
             if len(active_feats) != expected_n_features:
                 print(f"[WARNING] Feature dimension mismatch: model expects {expected_n_features} features, but {len(active_feats)} provided in vector. Falling back to heuristic mode.")
             else:
                 try:
                     X_vec = np.array([[doc_feats[fn] for fn in active_feats]])
-                    X_scaled = self.scaler.transform(X_vec)
+                    if self.scaler is not None:
+                        X_input = self.scaler.transform(X_vec)
+                    else:
+                        X_input = X_vec
+
                     if hasattr(self.classifier, "predict_proba"):
-                        probs = self.classifier.predict_proba(X_scaled)[0]
+                        probs = self.classifier.predict_proba(X_input)[0]
                         raw_classifier_prob = float(probs[1]) * 100.0 if len(probs) > 1 else float(probs[0]) * 100.0
                     else:
-                        pred = self.classifier.predict(X_scaled)[0]
+                        pred = self.classifier.predict(X_input)[0]
                         raw_classifier_prob = 80.0 if pred == 1 else 20.0
                 except Exception as e:
                     print(f"[WARNING] Model inference failed: {e}. Falling back to heuristic mode.")

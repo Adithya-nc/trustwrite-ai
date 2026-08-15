@@ -13,6 +13,7 @@ from app.services.feature_extractor import FeatureExtractor
 from training.dataset_builder import DatasetBuilder
 from sklearn.model_selection import train_test_split, StratifiedKFold, cross_val_score
 from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
@@ -52,14 +53,42 @@ def train_detector():
         print("CSV dataset not found, generating sample dataset...")
         df = DatasetBuilder.create_dataset()
 
+    # Basic Dataset Validation
+    if df is None or df.empty:
+        raise ValueError("Dataset is empty.")
+    if 'text' not in df.columns or 'label' not in df.columns:
+        raise ValueError("Dataset missing required 'text' or 'label' columns.")
+
+    initial_count = len(df)
+    df = df[df['text'].dropna().str.strip().astype(bool)].copy()
+    removed_count = initial_count - len(df)
+    if removed_count > 0:
+        print(f"Removed {removed_count} empty text row(s) from dataset.")
+    if df.empty:
+        raise ValueError("Dataset is empty after removing empty text rows.")
+
+    labels = set(df['label'].unique())
+    if 'human' not in labels or 'ai' not in labels:
+        raise ValueError(f"Dataset must contain both 'human' and 'ai' labels. Found: {labels}")
+
     valid, issues = DatasetBuilder.validate_dataset(df)
     if not valid:
         print("Dataset validation issues:", issues)
 
     print(f"Dataset loaded: {len(df)} samples ({sum(df['label'] == 'human')} human, {sum(df['label'] == 'ai')} AI)")
 
-    # 2. Extract features
-    extractor = FeatureExtractor()
+    # 2. Extract features with spaCy if available
+    try:
+        import spacy
+        nlp = spacy.load("en_core_web_sm")
+        extractor = FeatureExtractor(nlp)
+        spacy_status = "[OK] spaCy model loaded: en_core_web_sm"
+        print(spacy_status)
+    except Exception as e:
+        spacy_status = f"[WARNING] spaCy model unavailable: {e}"
+        extractor = FeatureExtractor()
+        print(spacy_status)
+
     X, y = extract_dataset_features(df, extractor)
 
     # 3. Train/Test split
@@ -67,11 +96,8 @@ def train_detector():
         X, y, test_size=0.3, random_state=42, stratify=y
     )
 
-    # 4. Compare models using Stratified K-Fold CV
+    # 4. Compare models using Stratified K-Fold CV & Pipelines to prevent data leakage
     skf = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
 
     candidates = {
         'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000),
@@ -81,25 +107,33 @@ def train_detector():
 
     best_score = -1.0
     best_name = ""
-    best_model = None
+    best_candidate_model = None
 
     for name, model in candidates.items():
-        scores = cross_val_score(model, X_train_scaled, y_train, cv=skf, scoring='f1')
+        pipe = Pipeline([
+            ('scaler', StandardScaler()),
+            ('classifier', model)
+        ])
+        scores = cross_val_score(pipe, X_train, y_train, cv=skf, scoring='f1')
         mean_f1 = float(np.mean(scores))
         print(f"Candidate '{name}' Cross-Val F1: {mean_f1:.4f}")
         if mean_f1 > best_score:
             best_score = mean_f1
             best_name = name
-            best_model = model
+            best_candidate_model = model
 
     print(f"\nSelected Model: {best_name} (CV F1: {best_score:.4f})")
 
-    # Fit best model on entire train set
-    best_model.fit(X_train_scaled, y_train)
+    # Fit best pipeline on complete train set
+    best_pipeline = Pipeline([
+        ('scaler', StandardScaler()),
+        ('classifier', best_candidate_model)
+    ])
+    best_pipeline.fit(X_train, y_train)
 
     # 5. Evaluate on test set
-    y_pred = best_model.predict(X_test_scaled)
-    y_prob = best_model.predict_proba(X_test_scaled)[:, 1] if hasattr(best_model, "predict_proba") else y_pred
+    y_pred = best_pipeline.predict(X_test)
+    y_prob = best_pipeline.predict_proba(X_test)[:, 1] if hasattr(best_pipeline, "predict_proba") else y_pred
 
     acc = float(accuracy_score(y_test, y_pred))
     prec = float(precision_score(y_test, y_pred, zero_division=0))
@@ -115,7 +149,7 @@ def train_detector():
 
     metrics = {
         'model_name': best_name,
-        'model_version': '1.0.0',
+        'model_version': '1.1.0',
         'accuracy': round(acc, 4),
         'precision': round(prec, 4),
         'recall': round(rec, 4),
@@ -129,6 +163,7 @@ def train_detector():
 
     print("\n--- Test Set Evaluation Results ---")
     print(json.dumps(metrics, indent=2))
+    print(f"\nFeature count: {len(FEATURE_NAMES)}")
 
     # 6. Save model bundle & metadata
     models_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'models'))
@@ -138,10 +173,10 @@ def train_detector():
     meta_path = os.path.join(models_dir, 'model_meta.json')
 
     pipeline_bundle = {
-        'scaler': scaler,
-        'classifier': best_model,
+        'scaler': None,
+        'classifier': best_pipeline,
         'feature_names': FEATURE_NAMES,
-        'model_version': '1.0.0'
+        'model_version': '1.1.0'
     }
 
     joblib.dump(pipeline_bundle, model_path)
